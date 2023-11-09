@@ -1,33 +1,37 @@
 import { useCookies } from "react-cookie"
-import { useSinglePostStore } from "@/store";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { addComment } from "@/services";
 
 
 export const useComment = () => {
 
     const [ cookie ] = useCookies(['token']);
+    const queryClient = useQueryClient();
 
-    const { addComment } = useSinglePostStore();
-
-    const commentPost = async (message: string, postId: string) => {
-        try {
-            const response = await fetch(`http://192.168.1.25:4000/message/${postId}/comment`, {
-                method: 'POST',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${cookie.token}`,
-                },
-                body: JSON.stringify({ body: message })
-            })
-            if(response.ok){
-                const data = await response.json();
-                addComment(data);
+    const { mutate: comment } = useMutation({
+        mutationFn: ({ postId, content, jwt }: { postId: string; content: string; jwt: string; }) => addComment(postId, content, jwt),
+        onMutate: async ({ postId, content, jwt }: { postId: string; content: string; jwt: string; }) => {
+            const previousComments = queryClient.getQueryData(['comments']);
+            queryClient.invalidateQueries({ queryKey: ['comments'] });
+            queryClient.setQueryData(['comments'], (oldComments: any) => {
+                if (!oldComments) return oldComments;
+                
+                const newComment = { content, postId, jwt };
+                const newComments = [...oldComments, newComment];
+                return newComments;
+            });
+        },
+        onError: ( context: any ) => {
+            if (context?.previousComments) {
+                queryClient.setQueryData(['comments'], context.previousComments);
             }
-        } catch (error) {
-            console.log(error)
+        },
+        onSettled: ( data, error, postId ) => {
+            queryClient.invalidateQueries({ queryKey: ['comments'] });
         }
-    }
+    });
 
     return {
-        commentPost
+        comment
     };
 }

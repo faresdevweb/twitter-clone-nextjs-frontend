@@ -7,6 +7,7 @@ import Recommend from "./Recommend";
 import Tweet from "./Tweet";
 import ProtectedRoute from "./ProtectedRoute";
 import ProfileTabs from "./ProfileTabs";
+import Error from "./Error"
 
 
 export { Layout, 
@@ -17,4 +18,5 @@ export { Layout,
     Recommend, 
     Tweet, 
     ProtectedRoute,
-    ProfileTabs }
+    ProfileTabs,
+    Error }

@@ -1,54 +1,52 @@
-import { useAuthStore } from "@/store";
-import { useCookies } from "react-cookie";
-import { useEffect, useState } from "react";
-import { usePostStore } from "@/store";
+  import { useCookies } from "react-cookie";
+  import { MutableRefObject, useEffect } from "react";
+  import { useInfiniteQuery } from "@tanstack/react-query";
+  import { getPosts } from "@/services";
 
-const LIMIT = 10;
+  const LIMIT = 10;
 
-export const usePagination = () => {
+  export const usePagination = (loader: MutableRefObject<null>) => {
+      const [cookie] = useCookies(['token']);
+    
+      const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+      } = useInfiniteQuery({
+        queryKey: ['posts'],
+        queryFn: ({ pageParam = 1 }) => getPosts(pageParam, LIMIT, cookie.token),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage, pages) => {
+          if (lastPage.length < LIMIT) {
+            return undefined;
+          }
+          return pages.length + 1;
+        },
+      });
 
-    const [page, setPage] = useState<number>(1);
-    const [loading, setLoading] = useState<boolean>(false);
-    const [hasMoreTweets, setHasMoreTweets] = useState<boolean>(true);
-    const [cookie] = useCookies(['token']);
-    const { isAuthenticated } = useAuthStore();
-    const { setPosts, posts } = usePostStore();
-
-    useEffect(() => {
-        if(isAuthenticated){
-          getAllPosts();
-        }
-      }, [isAuthenticated])
-
-    const getAllPosts = async () => {
-        try {
-            const response = await fetch(`http://192.168.1.25:4000/message?page=${page}`, {
-                method: 'GET',
-                headers: {
-                    "Authorization": `Bearer ${cookie.token}`,
-                }
-            });
-            if(response.ok){
-              const data = await response.json();
-              setPosts(data);
+      useEffect(() => {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            if (entries[0].isIntersecting) {
+              fetchNextPage();
             }
-        } catch (error) {
-            console.log(error);
-        }
-    }
-
-    const loadMorePosts = async () => {
-        setPage(page + 1);
-        setLoading(true);
-        const response = await fetch(`http://192.168.1.25:4000/message?page=${page}`);
-        const newPosts = await response.json();
-        setPosts([...posts, ...newPosts]);
-        setLoading(false);
-        if (newPosts.length < LIMIT) { // Assurez-vous de définir LIMIT correctement
-            setHasMoreTweets(false);
+          },
+          { threshold: 1.0 } // L'élément est complètement visible
+        );
+    
+        if (loader.current) {
+          observer.observe(loader.current);
         }
     
-    }
-
-    return { loadMorePosts, hasMoreTweets };
-}
+        // Nettoyer l'observer quand le composant est démonté
+        return () => {
+          if (loader.current) {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            observer.unobserve(loader.current);
+          }
+        };
+      }, [fetchNextPage, loader]);
+    
+      return { data ,hasNextPage, isFetchingNextPage };
+    };

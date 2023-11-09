@@ -1,6 +1,9 @@
 
 export interface Post {
-    Retweet: [],
+    comments: any;
+    user: any;
+    map(arg0: (post: any, index: number) => import("react").JSX.Element): import("react").ReactNode;
+    repostedIds: [],
     body: string,
     createdAt: Date,
     id: string,

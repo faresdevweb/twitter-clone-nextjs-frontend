@@ -1,15 +1,10 @@
-import { SearchInput } from "./Input";
 import { Recommend } from "@/components";
 import { useState, useEffect } from "react";
 import { useUser } from "@/hooks";
 
 const RightSidebar = () => {
-
   const { users } = useUser();
-  const [ randomUsers, setRandomUsers ] = useState(users);
-
- 
-  
+  const [randomUsers, setRandomUsers] = useState(users);
 
   useEffect(() => {
     const getRandomUser = (arr: any) => {
@@ -25,7 +20,7 @@ const RightSidebar = () => {
         selectedUsers.push(randomUser);
 
         // Remove the selected user from availableUsers so we don't select them again
-        availableUsers = availableUsers.filter(user => user !== randomUser);
+        availableUsers = availableUsers.filter((user) => user !== randomUser);
       }
       setRandomUsers(selectedUsers);
     };
@@ -33,20 +28,14 @@ const RightSidebar = () => {
     generateRandomUsers();
   }, [users]);
 
-  console.log(randomUsers);
-  
-   
   return (
-    <div className='border border-gray-300 border w-[35%] xs:hidden sm:hidden lg:hidden xl:block p-3 '>
-      <SearchInput />
+    <div className="border border-gray-300 border w-[45%] xs:hidden sm:hidden lg:hidden xl:block p-3 ">
       <div className="font-bold text-2xl mb-4">
         <h1>Who to follow</h1>
       </div>
-      {randomUsers.map(user => 
-        <Recommend 
-          key={user.id} 
-          user={user} 
-      />)}
+      {randomUsers.map((user) => (
+        <Recommend key={user.id} user={user} />
+      ))}
     </div>
   );
 };

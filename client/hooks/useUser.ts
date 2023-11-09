@@ -19,7 +19,7 @@ export const useUser = () => {
 
     const getAllUsers = async () => {
         try {
-            const response = await fetch('http://192.168.1.25:4000/user');
+            const response = await fetch('http://192.168.1.23:4000/user');
             const data = await response.json();
             setUsers(data);
         } catch (error) {

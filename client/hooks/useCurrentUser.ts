@@ -1,38 +1,26 @@
-import { useEffect, useState } from "react"
 import { useCookies } from "react-cookie";
 import { useUserStore } from "@/store"
+import { useQuery } from "@tanstack/react-query";
+import { getCurrentUser } from "@/services";
+import { User } from "@/interfaces/User.interface";
+import { useEffect } from "react";
 
 
 export const useCurrentUser = () => {
     const { setUser, user } = useUserStore();
     const [cookie] = useCookies(['token']);
-    const [loading, setLoading] = useState<boolean>(true);
-  
+
+    const { data, isSuccess } = useQuery<User, Error>({
+      queryKey: ['user'],
+      queryFn: () => getCurrentUser(cookie.token),
+    });    
+
     useEffect(() => {
-      if (cookie.token) {
-        getCurrentUser();
+      if (isSuccess && data) {
+        setUser(data);
       }
-    }, [cookie.token]);
+    }, [data, isSuccess, setUser])
   
-    const getCurrentUser = async () => {
-      try {
-        const response = await fetch('http://192.168.1.25:4000/user/user-info', {
-          method: 'GET',
-          headers: {
-            "Authorization": `Bearer ${cookie.token}`,
-          }
-        })
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  
-    return { user, loading }
+    return { user }
   }
   
